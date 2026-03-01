@@ -105,6 +105,27 @@ body {
   font-size: 1.5rem;
 }
 
+.calc-display__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+/* Screen-reader only content: visually hidden but accessible to assistive tech */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* ===========================
    Button Grid Layout
    =========================== */
