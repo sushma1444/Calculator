@@ -7,6 +7,8 @@
 import React, { useState, useCallback } from 'react';
 import Display from './Display';
 import Button from './Button';
+import History from './History';
+import { evaluateExpression } from '../utils/expressionParser';
 
 // Define valid operators and number buttons for validation
 const OPERATORS = ['+', '-', '*', '/'];
@@ -49,8 +51,10 @@ const canAddOperator = (expr) => {
 
 function Calculator() {
   const [expression, setExpression] = useState('');
+  const [result, setResult] = useState('');
   const [previousResult, setPreviousResult] = useState('');
   const [error, setError] = useState('');
+  const [history, setHistory] = useState([]);
 
   // Safe handler for all button clicks with input validation
   const handleButtonClick = useCallback(
@@ -61,12 +65,13 @@ function Calculator() {
       // Handle CLEAR button
       if (value === CLEAR_BUTTON) {
         setExpression('');
+        setResult('');
         setPreviousResult('');
         setError('');
         return;
       }
 
-      // Handle EQUALS button - placeholder for parser integration (Task 8)
+      // Handle EQUALS button - Evaluate expression using parser
       if (value === EQUALS_BUTTON) {
         if (!expression) {
           setError('No expression to evaluate');
@@ -78,19 +83,33 @@ function Calculator() {
           return;
         }
 
-        // Placeholder: Parser integration happens in Task 8-9
-        // For now, show that equals was pressed
+        // Task 9: Integrate expression parser
         try {
-          // TODO: Integrate evaluateExpression(expression) from parser
-          // const result = evaluateExpression(expression);
-          // setPreviousResult(expression);
-          // setExpression('');
-          // setError('');
+          const evaluatedResult = evaluateExpression(expression);
           
-          // Temporary placeholder behavior
-          setError('Parser not yet integrated (Task 8-9)');
+          // Update state with result
+          setResult(evaluatedResult);
+          setPreviousResult(expression);
+          
+          // Task 10: Add to history (last 5 calculations)
+          setHistory((prevHistory) => [
+            {
+              expression,
+              result: evaluatedResult,
+              timestamp: Date.now(),
+            },
+            ...prevHistory.slice(0, 4), // Keep only last 4, add new one = 5 total
+          ]);
+          
+          // Clear expression and show result
+          // User can continue calculating from result
+          setExpression(String(evaluatedResult));
+          setError('');
         } catch (err) {
-          setError(err.message || 'Calculation error');
+          // Handle parser errors (division by zero, syntax errors, etc.)
+          const errorMessage = err.message || 'Calculation error';
+          setError(errorMessage);
+          setResult('');
         }
         return;
       }
@@ -156,6 +175,13 @@ function Calculator() {
     [expression, error]
   );
 
+  // Handle clicking on history item to restore expression
+  const handleHistoryClick = useCallback((item) => {
+    setExpression(item.expression);
+    setError('');
+    setResult('');
+  }, []);
+
   // Determine variant for each button
   const getButtonVariant = (key) => {
     if (key === CLEAR_BUTTON || key === EQUALS_BUTTON) return 'action';
@@ -164,14 +190,15 @@ function Calculator() {
   };
 
   return (
-    <section className="calculator" aria-label="Calculator">
-      <Display
-        expression={expression}
-        result=""
-        error={error}
-        previousResult={previousResult}
-      />
-      <div className="calculator-grid">
+    <div className="calculator-container">
+      <section className="calculator" aria-label="Calculator">
+        <Display
+          expression={expression}
+          result={result}
+          error={error}
+          previousResult={previousResult}
+        />
+        <div className="calculator-grid">
         {KEYS.map((key) => (
           <Button
             key={key}
@@ -186,8 +213,10 @@ function Calculator() {
             }
           />
         ))}
-      </div>
-    </section>
+        </div>
+      </section>
+      <History history={history} onHistoryClick={handleHistoryClick} maxItems={5} />
+    </div>
   );
 }
 

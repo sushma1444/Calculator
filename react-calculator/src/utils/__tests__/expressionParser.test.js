@@ -1,7 +1,7 @@
 // Unit tests for expressionParser tokenizer (Task 6)
 // Run with: npm test -- expressionParser.test.js
 
-import { tokenize, validateTokens, TOKEN_TYPES, infixToPostfix } from './expressionParser';
+import { tokenize, validateTokens, TOKEN_TYPES, infixToPostfix, evaluatePostfix, evaluateExpression } from '../expressionParser';
 
 describe('Tokenizer (Task 6)', () => {
   describe('tokenize() - basic numbers', () => {
@@ -274,6 +274,155 @@ describe('Tokenizer (Task 6)', () => {
       expect(postfix[2].value).toBe('+');
       expect(postfix[4].value).toBe('*');
       expect(postfix[6].value).toBe('/');
+    });
+  });
+
+  describe('evaluatePostfix() - basic operations', () => {
+    test('should evaluate simple addition', () => {
+      const tokens = tokenize('2+3');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(5);
+    });
+
+    test('should evaluate simple subtraction', () => {
+      const tokens = tokenize('5-2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(3);
+    });
+
+    test('should evaluate simple multiplication', () => {
+      const tokens = tokenize('3*4');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(12);
+    });
+
+    test('should evaluate simple division', () => {
+      const tokens = tokenize('8/2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(4);
+    });
+
+    test('should handle decimal results', () => {
+      const tokens = tokenize('7/2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(3.5);
+    });
+  });
+
+  describe('evaluatePostfix() - precedence and order', () => {
+    test('should evaluate with correct precedence: 2+3*4 = 14', () => {
+      const tokens = tokenize('2+3*4');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(14);
+    });
+
+    test('should evaluate with parentheses: (2+3)*4 = 20', () => {
+      const tokens = tokenize('(2+3)*4');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(20);
+    });
+
+    test('should handle left-to-right evaluation: 10-3-2 = 5', () => {
+      const tokens = tokenize('10-3-2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(5);
+    });
+
+    test('should handle division order: 20/5/2 = 2', () => {
+      const tokens = tokenize('20/5/2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(2);
+    });
+  });
+
+  describe('evaluatePostfix() - complex expressions', () => {
+    test('should evaluate: 2+3*4+5 = 19', () => {
+      const tokens = tokenize('2+3*4+5');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(19);
+    });
+
+    test('should evaluate: (2+3)*(4+5) = 45', () => {
+      const tokens = tokenize('(2+3)*(4+5)');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(45);
+    });
+
+    test('should evaluate: 100/10+5*2 = 20', () => {
+      const tokens = tokenize('100/10+5*2');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(20);
+    });
+
+    test('should handle decimals: 3.5*2.5 = 8.75', () => {
+      const tokens = tokenize('3.5*2.5');
+      const postfix = infixToPostfix(tokens);
+      const result = evaluatePostfix(postfix);
+      expect(result).toBe(8.75);
+    });
+  });
+
+  describe('evaluatePostfix() - error handling', () => {
+    test('should throw error on division by zero', () => {
+      const tokens = tokenize('5/0');
+      const postfix = infixToPostfix(tokens);
+      expect(() => evaluatePostfix(postfix)).toThrow('Division by zero');
+    });
+
+    test('should throw error on division by zero in complex expression', () => {
+      const tokens = tokenize('10/(2-2)');
+      const postfix = infixToPostfix(tokens);
+      expect(() => evaluatePostfix(postfix)).toThrow('Division by zero');
+    });
+  });
+
+  describe('evaluateExpression() - end-to-end integration', () => {
+    test('should evaluate simple expression', () => {
+      expect(evaluateExpression('2+3')).toBe(5);
+    });
+
+    test('should evaluate with precedence', () => {
+      expect(evaluateExpression('2+3*4')).toBe(14);
+    });
+
+    test('should evaluate with parentheses', () => {
+      expect(evaluateExpression('(2+3)*4')).toBe(20);
+    });
+
+    test('should evaluate complex expression', () => {
+      expect(evaluateExpression('(10+5)*2-8/4')).toBe(28);
+    });
+
+    test('should handle decimals', () => {
+      expect(evaluateExpression('3.5+2.5')).toBe(6);
+    });
+
+    test('should handle whitespace', () => {
+      expect(evaluateExpression('  2  +  3  ')).toBe(5);
+    });
+
+    test('should throw error on division by zero', () => {
+      expect(() => evaluateExpression('5/0')).toThrow('Division by zero');
+    });
+
+    test('should throw error on empty expression', () => {
+      expect(() => evaluateExpression('')).toThrow('Invalid expression');
+    });
+
+    test('should throw error on invalid syntax', () => {
+      expect(() => evaluateExpression('2++')).toThrow();
     });
   });
 });
