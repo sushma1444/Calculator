@@ -297,10 +297,95 @@ function infixToPostfix(tokens) {
 }
 
 // ============================================================================
+// POSTFIX EVALUATOR
+// ============================================================================
+
+/**
+ * Evaluate a postfix (RPN) expression using an operand stack
+ * 
+ * Algorithm:
+ * 1. Scan postfix tokens left to right
+ * 2. If token is a number, push to operand stack
+ * 3. If token is an operator, pop two operands, apply operator, push result
+ * 4. Final stack should have exactly one value (the result)
+ * 
+ * @param {Token[]} postfixTokens - Array of postfix tokens from infixToPostfix()
+ * @returns {number} Evaluated result
+ * @throws {Error} If division by zero or malformed expression
+ */
+function evaluatePostfix(postfixTokens) {
+  const operandStack = [];
+
+  for (let i = 0; i < postfixTokens.length; i++) {
+    const token = postfixTokens[i];
+
+    // Push numbers onto the stack
+    if (token.type === TOKEN_TYPES.NUMBER) {
+      operandStack.push(token.value);
+      continue;
+    }
+
+    // Process operators
+    if (token.type === TOKEN_TYPES.OPERATOR) {
+      // Need at least 2 operands for binary operators
+      if (operandStack.length < 2) {
+        throw new Error('Invalid expression: insufficient operands for operator');
+      }
+
+      // Pop two operands (note: order matters for subtraction/division)
+      const operand2 = operandStack.pop(); // Right operand
+      const operand1 = operandStack.pop(); // Left operand
+
+      let result;
+
+      // Apply the operator
+      switch (token.value) {
+        case '+':
+          result = operand1 + operand2;
+          break;
+
+        case '-':
+          result = operand1 - operand2;
+          break;
+
+        case '*':
+          result = operand1 * operand2;
+          break;
+
+        case '/':
+          // Division by zero check
+          if (operand2 === 0) {
+            throw new Error('Division by zero');
+          }
+          result = operand1 / operand2;
+          break;
+
+        default:
+          throw new Error(`Unknown operator: ${token.value}`);
+      }
+
+      // Push result back onto stack
+      operandStack.push(result);
+      continue;
+    }
+
+    // Unexpected token type (should not happen if tokenizer is correct)
+    throw new Error(`Unexpected token type in postfix: ${token.type}`);
+  }
+
+  // Final stack should have exactly one value
+  if (operandStack.length !== 1) {
+    throw new Error(`Invalid expression: expected 1 result, got ${operandStack.length}`);
+  }
+
+  return operandStack[0];
+}
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
-export { Token, TOKEN_TYPES, tokenize, validateTokens, infixToPostfix };
+export { Token, TOKEN_TYPES, tokenize, validateTokens, infixToPostfix, evaluatePostfix };
 
 /**
  * Main entry point: Evaluate expression safely
@@ -325,11 +410,10 @@ export function evaluateExpression(expression) {
     // Task 7: Convert infix to postfix (Shunting Yard)
     const postfixTokens = infixToPostfix(tokens);
 
-    // TODO: Task 8 - Evaluate postfix expression
-    // const result = evaluatePostfix(postfixTokens);
+    // Task 8: Evaluate postfix expression
+    const result = evaluatePostfix(postfixTokens);
 
-    // Temporary placeholder - return postfix for debugging
-    throw new Error('Postfix evaluator not yet implemented (Task 8)');
+    return result;
   } catch (err) {
     if (err instanceof SyntaxError) {
       throw new Error(`Parse error: ${err.message}`);
